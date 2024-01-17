@@ -6,7 +6,8 @@
 #include <vector>
 #include <math.h>
 #include <queue>
-
+#include <cstdlib>
+#include<ctime>
 
 class Dijkstra
 {
@@ -21,7 +22,7 @@ private:
         int prev = -1;              // 최단 거리의 이전 노드 인덱스 : -1로 초기화
         float dist = INFINITY;      // 해당 노드까지의 최단거리 : INF로 초기화
 
-        bool operator< (Node A) const 
+        bool operator< (const Node A) const 
         {
             return this->dist > A.dist;     // dist가 작은게 우선 --> priority queue에서 사용
         }
@@ -45,4 +46,5 @@ public:
     ~Dijkstra();
 
     void Dijkstra_algorithm(Dijkstra::Graph* graph, int source, int destination);
+    void draw_image(Dijkstra::Graph* graph, std::vector<int> obstacle_node, int source, int destination, int grid_size);
 };

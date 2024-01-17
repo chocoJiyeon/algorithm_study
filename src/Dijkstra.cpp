@@ -3,7 +3,7 @@
 Dijkstra::Dijkstra()
 {
     Graph graph;
-    int grid_size = 6, start_node = 0, end_node = 17;
+    int grid_size = 20, start_node = 22, end_node = 213;
 
     for(int i=0; i< grid_size; i++)
     {
@@ -38,8 +38,29 @@ Dijkstra::Dijkstra()
     //     std::cout<<" + "<<std::endl;
     // }
 
+    // 랜덤 장애물 생성
+    std::vector<int> obstacle_node;
+    std::srand((unsigned int)time(NULL));
+    for(int num_of_ob = 100; num_of_ob > 0; num_of_ob--)
+    {
+        std::cout<<"obstacle : ";
+        int ob = rand() % (grid_size*grid_size);
+        if(ob != start_node && ob !=end_node) 
+        {
+            obstacle_node.push_back(ob);
+            std::cout<<ob<<" ";
+        }
+        std::cout<<"\n";
+    }
+    for(auto it : obstacle_node)
+    {
+        graph.vertex[it].have_visited = true;   // 장애물 있으면 안가도록 함
+    }
+
     Dijkstra_algorithm(&graph, start_node, end_node);
     std::cout<< "목적지까지의 거리 : " << graph.vertex[end_node].dist << std::endl;
+
+    draw_image(&graph, obstacle_node, start_node, end_node, grid_size);
 }//Dijkstra
 
 Dijkstra::~Dijkstra()
@@ -78,6 +99,49 @@ void Dijkstra::Dijkstra_algorithm(Dijkstra::Graph* graph, int source, int destin
                 pq.push(graph->vertex[it]);
             }
         }//for
+
+        if(graph->vertex[destination].have_visited == true) return;  //목적지까지 계산이 완료되면 종료
     }//while
 }//Dijkstra_algorithm
 
+void Dijkstra::draw_image(Dijkstra::Graph* graph, std::vector<int> obstacle_node, int source, int destination, int grid_size)
+{
+    int image_size = 1000, center_of_image = image_size/2;
+    int side_length = (image_size - 100)/(grid_size-1);
+    cv::Mat image(image_size, image_size, CV_8UC3, cv::Scalar(255, 255, 255));
+
+    // 노드 표시
+    for(auto it : graph->vertex)
+    {
+        auto color = CV_RGB(100, 100, 100);
+        int thick = 1;
+        if(it.index == source) {color = CV_RGB(255, 50, 50); thick = 3;}
+        else if(it.index == destination) {color = CV_RGB(50, 50, 255); thick = 3;}
+        
+        cv::circle(image, cvPoint(50 + it.point.second*side_length, 50 + it.point.first*side_length), 4, color, thick);
+    }
+    
+    // 장애물 표시
+    for(auto it : obstacle_node)   
+    {
+        auto p1 = cvPoint(50 - side_length/2 + graph->vertex[it].point.second * side_length, 50 - side_length/2 + graph->vertex[it].point.first * side_length);
+        auto p2 = cvPoint(50 + side_length/2 + graph->vertex[it].point.second * side_length, 50 + side_length/2 + graph->vertex[it].point.first * side_length);
+        cv::rectangle(image, cv::Rect(p1, p2), cv::Scalar(0, 0, 0), cv::FILLED, 1);
+
+    }
+    
+    bool is_start_node = false;
+    Node now = graph->vertex[destination], pre = graph->vertex[now.prev];
+    // 경로 표시
+    while(now.prev != -1)
+    {
+        auto p1 = cvPoint(50 + now.point.second*side_length, 50 + now.point.first*side_length);
+        auto p2 = cvPoint(50 + pre.point.second*side_length, 50 + pre.point.first*side_length);
+        cv::line(image, p1, p2, CV_RGB(50, 255, 0), 3, cv::LINE_AA);
+        now = graph->vertex[now.prev];
+        pre = graph->vertex[now.prev];
+    }
+
+    cv::imshow("Dijkstra", image);
+    cv::waitKey(0);
+}
